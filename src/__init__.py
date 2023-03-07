@@ -1,7 +1,10 @@
-from flask import Flask
 from typing import Tuple
 
-from .routes.home import _home
+from flask import Flask, render_template
+from flask_cors import CORS
+
+# from .routes.home import _home
+from .routes.ricknmortyapi import _api
 from .util.logger import logger_app
 from .util.set_config import configure
 
@@ -16,7 +19,9 @@ def error_handler(err: int) -> Tuple[dict, int]:
 
 
 def create_app() -> Flask:
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True, static_folder="./dist/assets", template_folder="./dist")
+    cors = CORS(app)  # noqa
+    app.config["CORS_HEADERS"] = "Content-Type"
 
     app.after_request(logger_app)
 
@@ -29,6 +34,12 @@ def create_app() -> Flask:
     with app.app_context():
         configure()
 
-    app.register_blueprint(_home)
+    @app.route("/", methods=["GET"])
+    @app.route("/<path:path>")
+    def root(path=None):
+        return render_template("index.html")
+
+    # app.register_blueprint(_home)
+    app.register_blueprint(_api)
 
     return app
